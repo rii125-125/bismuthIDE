@@ -32,4 +32,17 @@ public partial class MainWindow : Window
     {
         MessageBox.Show("Click \"OpenFolder\"button!");
     }
+    private void RunButton_Click(object sender, RoutedEventArgs e)
+    {
+    // Output logs along with the current time
+    string timestamp = DateTime.Now.ToString("HH:mm:ss");
+    OutputLog.AppendText($"[{timestamp}] Execution has begun...\n");
+
+    // Retrieve the editor's contents and output them to the console (for testing)
+    string code = CodeEditor.Text;
+    OutputLog.AppendText($"Number of characters in the entered code: {code.Length}\n");
+
+    // Automatically scroll to the bottom
+    OutputLog.ScrollToEnd();
+    }
 }
