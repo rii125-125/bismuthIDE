@@ -9,6 +9,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using ICSharpCode.AvalonEdit.Highlighting;
+using Microsoft.Win32;
 
 using System;
 using System.IO;
@@ -35,7 +36,29 @@ public partial class MainWindow : Window
 
     private void OpenFileButton_Click(object sender, RoutedEventArgs e)
     {
-        MessageBox.Show("Click \"OpenFile\"button!");
+        // 1. File Selection Dialog Settings
+        OpenFileDialog openFileDialog = new OpenFileDialog();
+        openFileDialog.Filter = "C# Files (*.cs)|*.cs|All files (*.*)|*.*";
+
+        // 2. Display a dialog and only proceed if the user clicks "Open"
+        if (openFileDialog.ShowDialog() == true)
+        {
+            try
+            {
+                // 3. Read the contents of the file
+                string fileText = File.ReadAllText(openFileDialog.FileName);
+
+                // 4. Set in the editor
+                CodeEditor.Text = fileText;
+
+                // 5. Console notification (optional)
+                OutputLog.AppendText($"[System] File opened: {openFileDialog.FileName}\n");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Could not open the file: {ex.Message}");
+            }
+        }
     }
     private void OpenFolderButton_Click(object sender, RoutedEventArgs e)
     {
