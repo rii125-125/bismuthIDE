@@ -36,43 +36,102 @@ public partial class MainWindow : Window
 
     private void OpenFileButton_Click(object sender, RoutedEventArgs e)
     {
-        // 1. File Selection Dialog Settings
         OpenFileDialog openFileDialog = new OpenFileDialog();
         openFileDialog.Filter = "C# Files (*.cs)|*.cs|All files (*.*)|*.*";
-
-        // 2. Display a dialog and only proceed if the user clicks "Open"
         if (openFileDialog.ShowDialog() == true)
         {
-            try
-            {
-                string content = File.ReadAllText(openFileDialog.FileName);
-                AddTab(openFileDialog.FileName, content);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Could not open the file: {ex.Message}");
-            }
+            string content = File.ReadAllText(openFileDialog.FileName);
+            AddTab(openFileDialog.FileName, content);
         }
     }
     private void OpenFolderButton_Click(object sender, RoutedEventArgs e)
+{
+    var dialog = new OpenFolderDialog(); // .NET 10 (WinAppSDK) 等で利用可能
+    if (dialog.ShowDialog() == true)
     {
-        MessageBox.Show("Click \"OpenFolder\"button!");
+        string folderPath = dialog.FolderName;
+        LoadFolder(folderPath);
+    }
+}
+
+    private void LoadFolder(string path)
+    {
+        FileExplorer.Items.Clear();
+        var rootItem = CreateTreeItem(path);
+        FileExplorer.Items.Add(rootItem);
+    }
+
+    // Retrieve folders and files hierarchically
+    private TreeViewItem CreateTreeItem(string path)
+    {
+        var item = new TreeViewItem
+        {
+            Header = System.IO.Path.GetFileName(path),
+            Tag = path // Keep the full path
+        };
+
+        try
+        {
+            // Add directory
+            foreach (var dir in Directory.GetDirectories(path))
+            {
+                item.Items.Add(CreateTreeItem(dir));
+            }
+            // Add files
+            foreach (var file in Directory.GetFiles(path))
+            {
+                var fileItem = new TreeViewItem
+                {
+                    Header = System.IO.Path.GetFileName(file),
+                    Tag = file
+                };
+                item.Items.Add(fileItem);
+            }
+        }
+        catch { /* Error handling for access denied and similar issues */ }
+
+        return item;
+    }
+    private void FileExplorer_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+    {
+        if (e.NewValue is TreeViewItem selectedItem)
+        {
+            string ?fullPath = selectedItem.Tag.ToString();
+
+            // If the file exists and is not a directory
+            if (File.Exists(fullPath))
+            {
+                // If a tab is already open, select it; otherwise, create a new one.
+                var existingTab = EditorTabs.Items.Cast<TabItem>()
+                    .FirstOrDefault(t => t.ToolTip?.ToString() == fullPath);
+
+                if (existingTab != null)
+                {
+                    EditorTabs.SelectedItem = existingTab;
+                }
+                else
+                {
+                    string content = File.ReadAllText(fullPath);
+                    AddTab(fullPath, content);
+                }
+            }
+        }
     }
     private void RunButton_Click(object sender, RoutedEventArgs e)
     {
         OutputLog.Clear();
-        OutputLog.AppendText("--- コンパイル開始 ---\n");
+        OutputLog.AppendText("--- Compile ---\n");
 
         try
         {
-            // 1. エディタからコードを取得
+            // 1. Get the code from the editor
             if (CurrentEditor == null) return;
             string codeToCompile = CurrentEditor.Text;
 
-            // 2. 構文解析（コードの木構造を作る）
+            // 2. Syntax Parsing (Building the Code Tree Structure)
             SyntaxTree syntaxTree = CSharpSyntaxTree.ParseText(codeToCompile);
 
-            // 3. コンパイル設定（標準的なライブラリを読み込む）
+            // 3. Compilation Settings (Load Standard Libraries)
             string assemblyName = System.IO.Path.GetRandomFileName();
             var trustedAssemblies = ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")).Split(System.IO.Path.PathSeparator);
             var references = trustedAssemblies
@@ -86,14 +145,14 @@ public partial class MainWindow : Window
                 references: references,
                 options: new CSharpCompilationOptions(OutputKind.ConsoleApplication));
 
-            // 4. メモリ上に出力
+            // 4. Output to memory
             using (var ms = new MemoryStream())
             {
                 EmitResult result = compilation.Emit(ms);
 
                 if (!result.Success)
                 {
-                    // エラーがあればコンソールに表示
+                    // If an error occurs, it will be displayed in the console.
                     IEnumerable<Diagnostic> failures = result.Diagnostics.Where(diagnostic =>
                         diagnostic.IsWarningAsError ||
                         diagnostic.Severity == DiagnosticSeverity.Error);
@@ -105,19 +164,19 @@ public partial class MainWindow : Window
                 }
                 else
                 {
-                    OutputLog.AppendText("コンパイル成功！実行中...\n\n");
+                    OutputLog.AppendText("Compilation successful! Running...\n\n");
 
-                    // 5. 実行（メモリ上のアセンブリをロードしてMainを呼ぶ）
+                    // 5. Execution (Load the assembly into memory and call Main)
                     ms.Seek(0, SeekOrigin.Begin);
                     Assembly assembly = Assembly.Load(ms.ToArray());
                     var entryPoint = assembly.EntryPoint;
 
-                    // 標準出力をキャプチャしてIDEのコンソールに向ける（簡易版）
+                    // Capture standard output and redirect it to the IDE console (simplified version)
                     var sw = new StringWriter();
                     Console.SetOut(sw);
 
-                    var parameters = entryPoint.GetParameters().Length > 0 ? new object[] { Array.Empty<string>() } : null;
-                    entryPoint.Invoke(null, parameters);
+                    var parameters = entryPoint?.GetParameters().Length > 0 ? new object[] { Array.Empty<string>() } : null;
+                    entryPoint?.Invoke(null, parameters);
 
                     OutputLog.AppendText(sw.ToString());
                 }
@@ -125,7 +184,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            OutputLog.AppendText($"エラー: {ex.Message}\n");
+            OutputLog.AppendText($"Error: {ex.Message}\n");
         }
     }
     /// <summary>
