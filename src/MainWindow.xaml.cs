@@ -21,7 +21,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Emit;
 
-namespace bismuthIDE;
+namespace bismuthIDE.src;
 
 /// <summary>
 /// Interaction logic for MainWindow.xaml
