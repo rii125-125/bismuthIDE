@@ -10,6 +10,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using ICSharpCode.AvalonEdit.Highlighting;
 using Microsoft.Win32;
+using ICSharpCode.AvalonEdit;
 
 using System;
 using System.IO;
@@ -30,8 +31,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-
-        CodeEditor.SyntaxHighlighting = HighlightingManager.Instance.GetDefinition("C#");
+        AddTab("Untitled.cs", "// Write your code here...");
     }
 
     private void OpenFileButton_Click(object sender, RoutedEventArgs e)
@@ -45,14 +45,8 @@ public partial class MainWindow : Window
         {
             try
             {
-                // 3. Read the contents of the file
-                string fileText = File.ReadAllText(openFileDialog.FileName);
-
-                // 4. Set in the editor
-                CodeEditor.Text = fileText;
-
-                // 5. Console notification (optional)
-                OutputLog.AppendText($"[System] File opened: {openFileDialog.FileName}\n");
+                string content = File.ReadAllText(openFileDialog.FileName);
+                AddTab(openFileDialog.FileName, content);
             }
             catch (Exception ex)
             {
@@ -72,7 +66,8 @@ public partial class MainWindow : Window
         try
         {
             // 1. エディタからコードを取得
-            string codeToCompile = CodeEditor.Text;
+            if (CurrentEditor == null) return;
+            string codeToCompile = CurrentEditor.Text;
 
             // 2. 構文解析（コードの木構造を作る）
             SyntaxTree syntaxTree = CSharpSyntaxTree.ParseText(codeToCompile);
@@ -87,7 +82,7 @@ public partial class MainWindow : Window
 
             CSharpCompilation compilation = CSharpCompilation.Create(
                 assemblyName,
-                syntaxTrees: new[] { syntaxTree },
+                syntaxTrees: [syntaxTree],
                 references: references,
                 options: new CSharpCompilationOptions(OutputKind.ConsoleApplication));
 
@@ -132,5 +127,63 @@ public partial class MainWindow : Window
         {
             OutputLog.AppendText($"エラー: {ex.Message}\n");
         }
+    }
+    /// <summary>
+    /// A property for easily obtaining the currently active editor
+    /// </summary>
+    private TextEditor ?CurrentEditor => (EditorTabs.SelectedItem as TabItem)?.Content as TextEditor;
+
+    private void AddTab(string fileName, string content)
+    {
+        // 1. Create a new editor
+        var newEditor = new TextEditor
+        {
+            Text = content,
+            FontFamily = new FontFamily("Consolas"),
+            FontSize = 14,
+            ShowLineNumbers = true,
+            SyntaxHighlighting = HighlightingManager.Instance.GetDefinition("C#")
+        };
+
+        // 2. Construct the tab header (appearance)
+    var headerStack = new StackPanel { Orientation = Orientation.Horizontal };
+    var headerText = new TextBlock
+    {
+        Text = System.IO.Path.GetFileName(fileName),
+        VerticalAlignment = VerticalAlignment.Center
+    };
+
+    // Close button (x)
+    var closeButton = new Button
+    {
+        Content = "×",
+        Margin = new Thickness(5, 0, 0, 0),
+        Padding = new Thickness(2),
+        FontSize = 10,
+        Width = 18,
+        Height = 18,
+        Background = Brushes.Transparent,
+        BorderBrush = Brushes.Transparent,
+        VerticalAlignment = VerticalAlignment.Center
+    };
+
+    // 3. Handling when the close button is pressed
+    var newTab = new TabItem();
+    closeButton.Click += (s, e) => {
+        EditorTabs.Items.Remove(newTab);
+        e.Handled = true; // Prevent the tab selection event from propagating further
+    };
+
+    headerStack.Children.Add(headerText);
+    headerStack.Children.Add(closeButton);
+
+    // 4. Tab Item Settings
+    newTab.Header = headerStack;
+    newTab.Content = newEditor;
+    newTab.ToolTip = fileName;
+
+    // 5. Add and Select
+    EditorTabs.Items.Add(newTab);
+    EditorTabs.SelectedItem = newTab;
     }
 }

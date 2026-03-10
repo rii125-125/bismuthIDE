@@ -8,7 +8,11 @@
         Title="Bismuth IDE" Height="450" Width="800">
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/> <RowDefinition Height="*"/>  <RowDefinition Height="5"/> <RowDefinition Height="150"/>  </Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="5"/>
+            <RowDefinition Height="150"/>
+        </Grid.RowDefinitions>
         <Menu Grid.Row="0">
             <MenuItem Header="File">
                 <MenuItem Header="OpenFile" Click="OpenFileButton_Click"/>
@@ -22,20 +26,17 @@
                 <MenuItem Header="Run" Click="RunButton_Click"/>
             </MenuItem>
         </Menu>
-        <avalonEdit:TextEditor Grid.Row="1"
-                                Name="CodeEditor"
-                                FontFamily="Consolas"
-                                FontSize="14pt"
-                                ShowLineNumbers="True"/>
+        <TabControl Grid.Row="1" Name="EditorTabs">
+        </TabControl>
         <GridSplitter Grid.Row="2" Height="5" HorizontalAlignment="Stretch" Background="#ccc"/>
         <TextBox Grid.Row="3"
-                    Name="OutputLog"
-                    IsReadOnly="True"
-                    Background="#1e1e1e"
-                    Foreground="White"
-                    FontFamily="Consolas"
-                    VerticalScrollBarVisibility="Auto"
-                    TextWrapping="Wrap"
-                    Text="--- Console ---&#x0a;"/>
+                 Name="OutputLog"
+                 IsReadOnly="True"
+                 Background="#1e1e1e"
+                 Foreground="White"
+                 FontFamily="Consolas"
+                 VerticalScrollBarVisibility="Auto"
+                 TextWrapping="Wrap"
+                 Text="--- Console ---&#x0a;"/>
     </Grid>
 </Window>
