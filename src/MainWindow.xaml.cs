@@ -34,6 +34,12 @@ public partial class MainWindow : Window
         AddTab("Untitled.cs", "// Write your code here...");
     }
 
+    private void NewFile_Click(object sender, RoutedEventArgs e)
+    {
+        AddTab("Untitled.cs", "// New file content here...");
+        OutputLog.AppendText("Created a new file.\n");
+    }
+
     private void OpenFileButton_Click(object sender, RoutedEventArgs e)
     {
         OpenFileDialog openFileDialog = new OpenFileDialog();
@@ -45,20 +51,53 @@ public partial class MainWindow : Window
         }
     }
     private void OpenFolderButton_Click(object sender, RoutedEventArgs e)
-{
-    var dialog = new OpenFolderDialog(); // .NET 10 (WinAppSDK) 等で利用可能
-    if (dialog.ShowDialog() == true)
     {
-        string folderPath = dialog.FolderName;
-        LoadFolder(folderPath);
+        var dialog = new OpenFolderDialog(); // .NET 10 (WinAppSDK) 等で利用可能
+        if (dialog.ShowDialog() == true)
+        {
+            string folderPath = dialog.FolderName;
+            LoadFolder(folderPath);
+        }
     }
-}
 
     private void LoadFolder(string path)
     {
         FileExplorer.Items.Clear();
         var rootItem = CreateTreeItem(path);
         FileExplorer.Items.Add(rootItem);
+    }
+
+    // Save File (Overwrite)
+    private void SaveButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (EditorTabs.SelectedItem is TabItem currentTab)
+        {
+            string? filePath = currentTab.ToolTip as string;
+            if (string.IsNullOrEmpty(filePath) || filePath == "Untitled.cs")
+            {
+                SaveAsButton_Click(sender, e);
+            }
+            else
+            {
+                File.WriteAllText(filePath, CurrentEditor?.Text);
+                OutputLog.AppendText($"Saved: {filePath}\n");
+            }
+        }
+    }
+
+    // Save As
+    private void SaveAsButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (EditorTabs.SelectedItem is TabItem currentTab)
+        {
+            var sfd = new SaveFileDialog { Filter = "C# Files (*.cs)|*.cs|All files (*.*)|*.*" };
+            if (sfd.ShowDialog() == true)
+            {
+                File.WriteAllText(sfd.FileName, CurrentEditor?.Text);
+                currentTab.ToolTip = sfd.FileName;
+                OutputLog.AppendText($"Saved As: {sfd.FileName}\n");
+            }
+        }
     }
 
     // Retrieve folders and files hierarchically
@@ -201,7 +240,11 @@ public partial class MainWindow : Window
             FontFamily = new FontFamily("Consolas"),
             FontSize = 14,
             ShowLineNumbers = true,
-            SyntaxHighlighting = HighlightingManager.Instance.GetDefinition("C#")
+            SyntaxHighlighting = HighlightingManager.Instance.GetDefinition("C#"),
+
+            Background = new SolidColorBrush(Color.FromRgb(30, 30, 30)),
+            Foreground = new SolidColorBrush(Color.FromRgb(212, 212, 212)),
+            LineNumbersForeground = Brushes.DimGray
         };
 
         // 2. Construct the tab header (appearance)
@@ -244,5 +287,28 @@ public partial class MainWindow : Window
     // 5. Add and Select
     EditorTabs.Items.Add(newTab);
     EditorTabs.SelectedItem = newTab;
+    }
+
+    // Toggle Sidebar (Tree) Display
+    private void ToggleSidebar_Click(object sender, RoutedEventArgs e)
+    {
+        // SideBarColumn is the zero-indexed element in Grid.ColumnDefinitions
+        SideBarColumn.Width = (SideBarColumn.Width.Value > 0) 
+        ? new GridLength(0) 
+        : new GridLength(200);
+    }
+
+    // Switching console displays
+    private void ToggleConsole_Click(object sender, RoutedEventArgs e)
+    {
+        ConsoleRow.Height = (ConsoleRow.Height.Value > 0) 
+        ? new GridLength(0) 
+        : new GridLength(150);
+    }
+
+    // App closed
+    private void Exit_Click(object sender, RoutedEventArgs e)
+    {
+        Application.Current.Shutdown();
     }
 }

@@ -5,52 +5,115 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:avalonEdit="http://icsharpcode.net/sharpdevelop/avalonedit"
         mc:Ignorable="d"
-        Title="Bismuth IDE" Height="450" Width="800">
-    <Grid>
-    <Grid.RowDefinitions>
-        <RowDefinition Height="Auto"/> <RowDefinition Height="*"/>    </Grid.RowDefinitions>
+        Title="Bismuth Editor" Height="600" Width="1000"
+        Background="#1e1e1e" Foreground="#d4d4d4">
 
-    <Grid.ColumnDefinitions>
-        <ColumnDefinition Width="200"/> <ColumnDefinition Width="5"/>   <ColumnDefinition Width="*"/>   </Grid.ColumnDefinitions>
+    <Window.Resources>
+        <Style TargetType="MenuItem">
+            <Setter Property="Background" Value="#252526"/>
+            <Setter Property="Foreground" Value="#cccccc"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="10,5"/>
+            <Style.Resources>
+                <SolidColorBrush x:Key="{x:Static SystemColors.MenuHighlightBrushKey}" Color="#3e3e42"/>
+                <SolidColorBrush x:Key="{x:Static SystemColors.ControlBrushKey}" Color="#252526"/>
+            </Style.Resources>
+        </Style>
+        <Style TargetType="TabItem">
+            <Setter Property="Background" Value="#2d2d2d"/>
+            <Setter Property="Foreground" Value="#969696"/>
+            <Setter Property="BorderThickness" Value="0"/> <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabItem">
+                        <Border Name="Border" Background="{TemplateBinding Background}" Padding="10,5">
+                            <ContentPresenter ContentSource="Header"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Border" Property="Background" Value="#1e1e1e"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style TargetType="Menu">
+            <Setter Property="Background" Value="#252526"/>
+            <Setter Property="Foreground" Value="#cccccc"/>
+            <Setter Property="BorderThickness" Value="0"/>
+        </Style>
+    </Window.Resources>
 
-    <Menu Grid.Row="0" Grid.ColumnSpan="3">
-        <MenuItem Header="File">
-            <MenuItem Header="OpenFile" Click="OpenFileButton_Click"/>
-            <MenuItem Header="OpenFolder" Click="OpenFolderButton_Click"/>
-        </MenuItem>
-        <MenuItem Header="Edit">
-            <MenuItem Header="Undo"/>
-            <MenuItem Header="Fix"/>
-        </MenuItem>
-        <MenuItem Header="Run">
-            <MenuItem Header="Run" Click="RunButton_Click"/>
-        </MenuItem>
-    </Menu>
-
-    <TreeView Grid.Row="1" Grid.Column="0" Name="FileExplorer"
-              SelectedItemChanged="FileExplorer_SelectedItemChanged">
-    </TreeView>
-
-    <GridSplitter Grid.Row="1" Grid.Column="1" Width="5" HorizontalAlignment="Stretch" Background="#ccc"/>
-
-    <Grid Grid.Row="1" Grid.Column="2">
+    <Grid Name="GridRoot">
         <Grid.RowDefinitions>
-            <RowDefinition Height="*"/>    <RowDefinition Height="5"/>    <RowDefinition Height="150"/>  </Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
 
-        <TabControl Grid.Row="0" Name="EditorTabs">
-        </TabControl>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="220" x:Name="SideBarColumn"/>
+            <ColumnDefinition Width="2"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
 
-        <GridSplitter Grid.Row="1" Height="5" HorizontalAlignment="Stretch" Background="#ccc"/>
+        <Menu Grid.Row="0" Grid.ColumnSpan="3" Panel.ZIndex="10" BorderBrush="#333" BorderThickness="0,0,0,1">
+            <MenuItem Header="File">
+                <MenuItem Header="New File" Click="NewFile_Click" InputGestureText="Ctrl+N" />
+                <MenuItem Header="Open File..." Click="OpenFileButton_Click" InputGestureText="Ctrl+O"/>
+                <MenuItem Header="Open Folder..." Click="OpenFolderButton_Click"/>
+                <Separator Background="#444"/>
+                <MenuItem Header="Save" Click="SaveButton_Click" InputGestureText="Ctrl+S"/>
+                <MenuItem Header="Save As..." Click="SaveAsButton_Click"/>
+                <Separator Background="#444"/>
+                <MenuItem Header="Exit" Click="Exit_Click" />
+            </MenuItem>
+            <MenuItem Header="Edit">
+                <MenuItem Header="Undo" Command="Undo" InputGestureText="Ctrl+Z"/>
+                <MenuItem Header="Redo" Command="Redo" InputGestureText="Ctrl+Y"/>
+                <Separator Background="#444"/>
+                <MenuItem Header="Cut" Command="Cut" InputGestureText="Ctrl+X"/>
+                <MenuItem Header="Copy" Command="Copy" InputGestureText="Ctrl+C"/>
+                <MenuItem Header="Paste" Command="Paste" InputGestureText="Ctrl+V"/>
+                <Separator Background="#444"/>
+                <MenuItem Header="Select All" Command="SelectAll" InputGestureText="Ctrl+A"/>
+            </MenuItem>
+            <MenuItem Header="View">
+                <MenuItem Header="Toggle Sidebar" Click="ToggleSidebar_Click" InputGestureText="Ctrl+B"/>
+                <MenuItem Header="Toggle Console" Click="ToggleConsole_Click" InputGestureText="Ctrl+J"/>
+            </MenuItem>
+            <MenuItem Header="Run">
+                <MenuItem Header="Run Script" Click="RunButton_Click" InputGestureText="F5"/>
+            </MenuItem>
+        </Menu>
 
-        <TextBox Grid.Row="2"
-                 Name="OutputLog"
-                 IsReadOnly="True"
-                 Background="#1e1e1e"
-                 Foreground="White"
-                 FontFamily="Consolas"
-                 VerticalScrollBarVisibility="Auto"
-                 TextWrapping="Wrap"
-                 Text="--- Console ---&#x0a;"/>
+        <TreeView Grid.Row="1" Grid.Column="0" Name="FileExplorer"
+          Background="#252526" 
+          Foreground="#cccccc"
+          BorderThickness="0"
+          SelectedItemChanged="FileExplorer_SelectedItemChanged">
+        </TreeView>
+
+        <GridSplitter Grid.Row="1" Grid.Column="1" HorizontalAlignment="Stretch" Cursor="SizeWE"/>
+
+        <Grid Grid.Row="1" Grid.Column="2" Background="#1e1e1e">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="2"/>
+                <RowDefinition Height="150" x:Name="ConsoleRow"/>
+            </Grid.RowDefinitions>
+
+            <TabControl Grid.Row="0" Name="EditorTabs"
+            Background="#1e1e1e"
+            BorderThickness="0"
+            Padding="0"> </TabControl>
+
+            <GridSplitter Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Center" Cursor="SizeNS"/>
+
+            <TextBox Grid.Row="2" Name="OutputLog" IsReadOnly="True"
+                     Background="#1e1e1e" Foreground="#d4d4d4"
+                     FontFamily="Consolas" VerticalScrollBarVisibility="Auto"
+                     TextWrapping="Wrap" Text="--- Console ---&#x0a;"/>
+        </Grid>
     </Grid>
-</Grid>
 </Window>
